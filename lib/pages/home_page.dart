@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:app_flutter/pages/add_data_page.dart';
-import 'package:app_flutter/pages/edit_data_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:app_flutter/pages/add_data_page.dart';
+import 'package:app_flutter/pages/edit_data_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,38 +12,48 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, String>> _listdata = [];
-  Future _getdata() async{
-    final url = 'https://tnhtech1.com/conn.php';
+  List<Map<String, dynamic>> _listdata = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _getdata();
+  }
+
+  Future<void> _getdata() async {
+    final url = 'http://localhost:9000/product/get-products/';
     try {
       final response = await http.get(
-          Uri.parse(url),
-          headers: {"Acces-Control_Allow_Origin": "*"});
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final List<dynamic> data = jsonDecode(response.body);
+        print(data);  // Pour déboguer les données reçues
         setState(() {
-          _listdata = data;
+          _listdata = List<Map<String, dynamic>>.from(data);
         });
       }
-    }catch (e) {
+    } catch (e) {
       print(e);
     }
   }
 
-  Future _deletedata( String matricule) async{
-    final url = 'https://tnhtech1.com/delete.php';
+  Future<bool> _deletedata(String id) async {
+    final url = 'http://localhost:9000/product/delete-product/$id';
     try {
-      final response = await http.get(
-          Uri.parse(url),
-          headers: {"Acces-Control_Allow_Origin": "*"});
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+      );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print(data);
         return true;
       }
       return false;
-    }catch (e) {
+    } catch (e) {
       print(e);
+      return false;
     }
   }
 
@@ -63,49 +73,61 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                     builder: ((context) => EditDataPage(
-                          ListData: {
-                            "id": _listdata[index]["id"],
-                            "matricule": _listdata[index]['matricule'],
-                            "nom": _listdata[index]['nom'],
-                            "adresse": _listdata[index]['adresse'],
-                          },
-                        )),
+                      ListData: {
+                        "name": _listdata[index]['name'],
+                        "description": _listdata[index]['description'],
+                      },
+                    )),
                   ),
                 );
               },
               child: ListTile(
-                title: Text(_listdata[index]['nom']??''),
-                subtitle: Text(_listdata[index]['adresse']??''),
+
+                title: Text(_listdata[index]['name'] ?? ''),
+                subtitle: Text(_listdata[index]['description'] ?? ''),
                 trailing: IconButton(
                   onPressed: () {
                     showDialog(
-                        context: context,
-                        builder: ((context) {
-                          return AlertDialog(
-                            content: Text(
-                                "Etes vous sur de vouloir supprimer les donnees ${_listdata[index]['nom']}?"),
-                            actions: [
-                              ElevatedButton(
-                                  onPressed: () {
-                                    String matricule = _listdata[index]['matricule'] ?? '';
-                                    _deletedata(matricule).then((value) {
-                                      if (value) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Les donnees ont ete supprimees avec succes")));
-                                        _getdata();
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Echec de la suppression des donnees")));
-                                      }
-                                    });
-                                  },
-                                  child: Text("Oui")),
-                              ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text("Non")),
-                            ],
-                          );
-                        }));
+                      context: context,
+                      builder: ((context) {
+                        return AlertDialog(
+                          content: Text(
+                            "Etes-vous sûr de vouloir supprimer les données ${_listdata[index]['name']}?",
+                          ),
+                          actions: [
+                            ElevatedButton(
+                              onPressed: () {
+                                String id = _listdata[index]['id'] ?? '';
+                                _deletedata(id).then((value) {
+                                  if (value) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Les données ont été supprimées avec succès"),
+                                      ),
+                                    );
+                                    _getdata();
+                                    Navigator.of(context).pop(); // Fermer le dialogue
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Échec de la suppression des données"),
+                                      ),
+                                    );
+                                  }
+                                });
+                              },
+                              child: const Text("Oui"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Non"),
+                            ),
+                          ],
+                        );
+                      }),
+                    );
                   },
                   icon: const Icon(Icons.delete),
                 ),
@@ -115,13 +137,14 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: (){
-          Navigator.push(context,
-           MaterialPageRoute(builder: (context)=> const AddData()));
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddData()),
+          );
         },
-        child: const Icon(Icons.add),),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
-
-

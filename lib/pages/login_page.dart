@@ -18,27 +18,24 @@ class _LoginPageState extends State<LoginPage> {
 
   // Définition de la méthode loginUser
   Future<String> loginUser(String email, String password) async {
-    final url = 'http://tnhtechnologies.cm/login.php';
+    final url = 'http://localhost:9000/user/login/';
 
-      final response = await http.post(
-        Uri.parse(url),
-        body: {'email': email, 'password': password},
-      );
-        print(response.body);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data == 'Succes') {
-          // Connexion réussie
-          print(data);
-          return 'Success';
-        } else {
-          print(data);
-          // Erreur de connexion
-          return 'Error';
-        }
-      }else{
-        throw Exception(response.body);
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'Success') {
+        return 'Success';
+      } else {
+        return 'Error';
       }
+    } else {
+      throw Exception(response.body);
+    }
 
 
   }
@@ -87,49 +84,67 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),),
             ),
-            ElevatedButton(onPressed: () async {
-              final email = _emailController.text;
-              final password = _passwordController.text;
-              final result = await loginUser(email, password);
-              if (result == 'Success') {
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      AlertDialog(
-                        title: const Text(' Connexion réussie'),
-                        content: const Text('Votre connexion a réussi'),
+              ElevatedButton(
+                onPressed: () async {
+                  final email = _emailController.text;
+                  final password = _passwordController.text;
+                  try {
+                    final result = await loginUser(email, password);
+                    if (result == 'Success') {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Connexion réussie'),
+                          content: const Text('Votre connexion a réussi'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Close the dialog
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomePage(),
+                                  ),
+                                );
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Erreur'),
+                          content: const Text('Erreur de connexion'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Erreur'),
+                        content: Text('Erreur: $e'),
                         actions: [
                           TextButton(
-                            onPressed: () {
-                              Navigator.pop(context); // Close the dialog
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage ()),
-                              );
-                            },
+                            onPressed: () => Navigator.pop(context),
                             child: const Text('OK'),
                           ),
                         ],
                       ),
-                );
-              } else {
-                showDialog(context: context, builder: (context) =>
-                    AlertDialog(title: const Text('Erreur'),
-                      content: const Text('Votre connexon a réussi !'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('OK'),
-                        )
-                      ],
-                    ),
-                );
-              }
-            },
-              child: const Text('Se connecter'),
-                //(){Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: ((context)=>HomePage())), (route) => false);}, child: const Text('se connecter'),
-            ),
+                    );
+                  }
+                },
+                child: const Text('Se connecter'),
+              ),
 
             const SizedBox(height: 16.0),
 

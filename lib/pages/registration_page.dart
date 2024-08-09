@@ -11,18 +11,19 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   // Définition de la méthode registerUser
-  Future<void> registerUser(String email, String password) async {
-    final url = 'http://tnhtechnologies.cm/register.php';
+  Future<void> registerUser(String name, String email, String password) async {
+    final url = 'http://localhost:9000/user/create/';
 
     final response = await http.post(
       Uri.parse(url),
-      body: {'email': email, 'password': password},
+      body: {'name': name, 'email': email, 'password': password},
     );
-    //print(response.body);
+    //print('test1');print(response.body);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data == 'Succes') {
@@ -68,6 +69,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+              ),
+            ),
+            TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
                 labelText: 'Email',
@@ -85,9 +92,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
             ),
             ElevatedButton(
                 onPressed: () async {
+                  final name = _nameController.text;
+                  //print(name);
                   final email = _emailController.text;
+                  //print(email);
                   final password = _passwordController.text;
-                  await registerUser(email, password);
+                  //print(password);
+                  await registerUser(name, email, password);
                 },
                 child: const Text("Sinscrire"))
           ],
