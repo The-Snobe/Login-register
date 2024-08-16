@@ -73,7 +73,8 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                     builder: ((context) => EditDataPage(
-                      ListData: {
+                      listData: {
+                        "id": _listdata[index]['id'],
                         "name": _listdata[index]['name'],
                         "description": _listdata[index]['description'],
                       },
