@@ -15,47 +15,48 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Définition de la méthode registerUser
   Future<void> registerUser(String name, String email, String password) async {
     final url = 'http://localhost:9000/user/create/';
 
     final response = await http.post(
       Uri.parse(url),
-      body: {'name': name, 'email': email, 'password': password},
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'name': name, 'email': email, 'password': password}), // Encodage JSON
     );
-    //print('test1');print(response.body);
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      if (data == 'Succes') {
-        showDialog(context: context, builder: (context) => AlertDialog(
-          title: const Text('Succes de l\'inscription'),
-          content: const Text('Votre inscription a reussi'),
-          actions: [
-            TextButton(onPressed: (){
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
+      if (data['status'] == 'Success') {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Succès de l\'inscription'),
+            content: const Text('Votre inscription a réussi.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
                 child: const Text('OK'),
-            )
-          ],
-        ),
+              )
+            ],
+          ),
         );
-
       } else {
-        //print(data);
-        // Erreur de connexion
-       // return false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Erreur lors de l'inscription.")),
+        );
       }
-    }else{
+    } else {
       throw Exception("Failed to connect to server");
     }
-
-
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +72,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'Name',
+                labelText: 'Nom',
               ),
             ),
             TextFormField(
@@ -92,15 +93,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
             ),
             ElevatedButton(
                 onPressed: () async {
-                  final name = _nameController.text;
-                  //print(name);
-                  final email = _emailController.text;
-                  //print(email);
-                  final password = _passwordController.text;
-                  //print(password);
+                  final name = _nameController.text.trim();
+                  final email = _emailController.text.trim();
+                  final password = _passwordController.text.trim();
                   await registerUser(name, email, password);
                 },
-                child: const Text("Sinscrire"))
+                child: const Text("S'inscrire")),
           ],
         ),
       ),
