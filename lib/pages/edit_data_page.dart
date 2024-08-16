@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class EditDataPage extends StatefulWidget {
-  final Map ListData;
-  const EditDataPage({super.key, required this.ListData});
+  final Map listData;
+  const EditDataPage({super.key, required this.listData});
 
   @override
   State<EditDataPage> createState() => _EditDataPageState();
@@ -13,39 +13,41 @@ class EditDataPage extends StatefulWidget {
 
 class _EditDataPageState extends State<EditDataPage> {
   final formKey = GlobalKey<FormState>();
-  late TextEditingController nom;
-  late TextEditingController adresse;
+  late TextEditingController nomController;
+  late TextEditingController descriptionController;
 
   @override
   void initState() {
     super.initState();
     // Remplir les champs avec les données existantes
-    nom = TextEditingController(text: widget.ListData['name']);
-    adresse = TextEditingController(text: widget.ListData['description']);
+    nomController = TextEditingController(text: widget.listData['name']);
+    descriptionController = TextEditingController(text: widget.listData['description']);
   }
 
   Future<void> _updateData() async {
     if (formKey.currentState?.validate() ?? false) {
-      final name = nom.text.trim();
-      final desc = adresse.text.trim();
+      final name = nomController.text.trim();
+      final description = descriptionController.text.trim();
 
-      if (name.isEmpty || desc.isEmpty) {
+      if (name.isEmpty || description.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Les champs nom et description ne peuvent pas être vides.")),
         );
         return;
       }
 
-      final url = 'http://localhost:9000/product/update-product/${widget.ListData['id']}';
+      // Récupérer automatiquement l'ID du produit depuis listData
+      final id = widget.listData['id'];
+      final url = 'http://localhost:9000/product/update-product/$id';
 
       try {
         final response = await http.put(
           Uri.parse(url),
           headers: {
-            'Content-Type': 'application/json',  // Ajout du Content-Type
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({'name': name, 'description': desc}),
+          body: jsonEncode({'name': name, 'description': description}),
         );
 
         if (response.statusCode == 200) {
@@ -73,55 +75,37 @@ class _EditDataPageState extends State<EditDataPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Mettre à jour"),
-      ),
-      body: Form(
-        key: formKey,
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text('Modifier les données')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: formKey,
           child: Column(
             children: [
-              const SizedBox(height: 16.0),
               TextFormField(
-                controller: nom,
-                decoration: const InputDecoration(
-                  labelText: "Nom",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(10.0),
-                    ),
-                  ),
-                ),
+                controller: nomController,
+                decoration: const InputDecoration(labelText: 'Nom du produit'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return "Le nom ne peut être vide.";
+                    return 'Le nom ne peut pas être vide.';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 16.0),
               TextFormField(
-                controller: adresse,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(10.0),
-                    ),
-                  ),
-                ),
+                controller: descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return "La description ne peut être vide.";
+                    return 'La description ne peut pas être vide.';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _updateData,
-                child: const Text("Mettre à jour"),
+                child: const Text('Mettre à jour'),
               ),
             ],
           ),
